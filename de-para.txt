@@ -1,0 +1,46 @@
+COLLECTION
+content | title
+available | status
+description | content
+href | link
+lang | language
+
+COMUNNITY
+content | title
+avaiable | status
+img | thumbnail (???)
+href | link
+description | content
+lang | language
+
+ABOUT
+content | title
+avaiable | status
+href | link
+description | content
+lang | language
+
+PORTAL (incompleto)
+(ver a parte)
+
+TOPIC (???)
+content | title
+avaiable | status
+href | link
+description | content
+lang | language
+
+CALLS
+content | title
+avaiable | status
+href | link
+description | content
+lang | language
+img | thumbnail (???)
+
+RSS 
+(decidir) (não migrar)
+
+Anotações:
+- Quando for só img, criar um link na imagem
+- Não mandar ID
