@@ -1,94 +1,111 @@
 <?php
 
+require_once(dirname(__FILE__) . '/functions.php');
+
 ini_set('default_charset', 'utf-8');
 
-$dir = dirname(__FILE__) . '/xml';
-
-// dicionário DE-PARA ( "bvs-site" => "wordpress")
-$terms_parser = array(
-	'collection' => array(
-		"content" => "title",
-		"available" => "status",
-		"description" => "content",
-		"href" => "link",
-		"lang" => "language",
-	),
-	
-	'community' => array(
-		"content" => "title",
-		"avaiable" => "status",
-		"img" => "thumbnail",
-		"href" => "link",
-		"description" => "content",
-		"lang" => "language",
-	),
-
-	'about' => array(
-		"content" => "title",
-		"avaiable" => "status",
-		"href" => "link",
-		"description" => "content",
-		"lang" => "language",
-	),
-
-	'topic' => array(
-		"content" => "title",
-		"avaiable" => "status",
-		"href" => "link",
-		"description" => "content",
-		"lang" => "language",
-	),
-
-	'calls' => array(
-		"content" => "title",
-		"avaiable" => "status",
-		"href" => "link",
-		"description" => "content",
-		"lang" => "language",
-	),
-
-);
+// XML DIRECTORY that contains items
+$XML_DIRECTORY = dirname(__FILE__) . '/xml/pt';
 
 $items = array();
-
-foreach(glob($dir . "/??.xml") as $file) {
+foreach(glob($XML_DIRECTORY . "/??.xml") as $file) {
 	$doc = new DOMDocument();
 	$doc->load($file);
 
-	$type = $doc->documentElement->tagName;
-	$structure = $doc->getElementsByTagName("item");
+	$typename = $doc->documentElement->tagName;
 
-	foreach($structure as $item) {
-	
-		foreach($item->attributes as $attr) {	
-			$tmp[$attr->name] = $attr->value;
-		}
-
-		if($item->hasChildNodes())
-			$tmp['content'] = $item->firstChild->nodeValue;
+	foreach($doc->getElementsByTagName($typename) as $type) {
 		
-		if($item->hasChildNodes()) {
-
-			foreach($item->getElementsByTagName('description') as $node) {
-				
-				$tmp[$node->tagName] = $node->nodeValue;	
-			}
+		foreach($type->attributes as $attr) {	
+			$items[$typename]['attr'][$attr->name] = $attr->value;
 		}
 
-		$items[$type][] = $tmp;
-	} 
+		$structure = $type->getElementsByTagName("item");
+
+		foreach($structure as $item) {
+
+			// component id
+			$id_collection = $items[$typename]['attr']['id'];
+		
+			foreach($item->attributes as $attr) {	
+				$tmp[$attr->name] = $attr->value;
+			}
+			
+			// item id
+			$id_tmp = $tmp['id'];
+
+			if($item->hasChildNodes()) {
+				$tmp['content'] = $item->firstChild->nodeValue;
+
+			}
+			
+			$tmp['parent_id'] = 0;			
+
+			
+			if($item->hasChildNodes()) {
+
+				foreach($item->getElementsByTagName('description') as $node) {
+					
+					$tmp[$node->tagName] = $node->nodeValue;	
+				}
+			}
+
+			if(isset($tmp['id']) && isset($items[$typename]['attr']['id'])) {
+
+				$tmp['id'] = $id_collection . 0 . $id_tmp;
+				//$tmp['id'] = $id_collection * 10 + $id_tmp;
+			}
+
+			// pega os filhos
+			$tmp['childs'] = get_child_ids($item);
+
+			// trata os ids dos filhos
+			foreach($tmp['childs'] as $key => $child) {
+				$tmp['childs'][$key] = $id_collection . 0 . $child;
+			}
+
+			$items[$typename][$tmp['id']] = $tmp;
+		} 
+		
+		
+	}
+
 
 	//break;
+}
+
+// agora itera pegando os filhos e colocando os aprents ids corretos
+foreach($items as $typename => $type) {
+	
+	foreach($type as $item_id => $item) {
+	
+		if(isset($item['childs']) && count($item['childs']) > 0) {
+			
+			foreach($item['childs'] as $child) {
+				
+				if(isset($type[$child])) {
+
+					$items[$typename][$child]['parent_id'] = $item['id'];
+				}
+			}
+		}
+	}
+}
+
+if(isset($_REQUEST['debug'])) {
+	
+	print '<pre>';
+	print_r($items);die;
 }
 
 $parsed_items = array();
 foreach($items as $label => $item) {
 	
-	foreach($item as $child) {
+	foreach($item as $itemnumber => $child) {
 		
 		$tmp = array();
 
-		if($label == 'collection') {
+		if($label == 'collection' && $itemnumber != "attr") {
 			foreach($child as $key => $value) {
 				
 				switch($key) {
@@ -96,6 +113,8 @@ foreach($items as $label => $item) {
 					case 'available': $tmp['status'] = $value; break;
 					case 'description': $tmp['content'] = $value; break;
 					case 'href': $tmp['link'] = $value; break;
+					case 'parent_id': $tmp['wp:post_parent'] = $value; break;
+					case 'id': $tmp['wp:post_id'] = $value; break;
 				}
 			}
 
@@ -146,6 +165,15 @@ foreach($header_items as $key => $value) {
 	$channel->appendChild($key);
 }
 
+$author = $dom->createElement('wp:author');
+
+foreach(array('wp:author_login' => 'importer', 'wp:author_email' => 'importer@bvs.com') as $key => $value) {
+	$item = $dom->createElement("$key", $value);
+	$author->appendChild($item);
+}
+
+$channel->appendChild($author);
+
 // rss content
 foreach($parsed_items as $bvs_item) {
 	
@@ -153,6 +181,7 @@ foreach($parsed_items as $bvs_item) {
 
 	foreach($bvs_item as $key => $value) {
 		
+		// itens que sao cDATA
 		if(in_array($key, array('content', 'link'))) {
 			
 			$cdata = $dom->createCDATASection(trim($value));
@@ -179,8 +208,12 @@ foreach($parsed_items as $bvs_item) {
 $root->appendChild($channel);
 $dom->appendChild($root);
 
-header("Content-Type: text/xml");
-print $dom->saveXML();
+if(!isset($_REQUEST['debug'])) {
+	
+	header("Content-Type: text/xml");
+	print $dom->saveXML();
+	
+}
 
 
 
