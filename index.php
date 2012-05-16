@@ -1,14 +1,34 @@
 <?php
+/* BVS Site Importer - 2011
+ * 
+ * This script imports the XML data of BVS-Site 5.x to a XML_RPC structure. 
+ * This structure can be imported in a Wordpress instalation with BVS-Site and
+ * Multi Language Framework plugins.
+ * 
+ * Instructions:
+ * - Sets the path for XML-BVS-Site directory in the $XML_DIRECTORY
+ * - Sets the language that you wants to make import in $LANGUAGE (in bvs-sites with
+ *   more than one idiom, please do the process more times)
+ *
+ * More information in:
+ * - http://github.com/bireme/bvs-site-wp-plugin
+ * - http://github.com/bireme/wp-multi-language-framework
+ */
+
+// XML DIRECTORY that contains items
+$XML_DIRECTORY = '/home/moa/project/bireme/vhost/bvsms/bases/site/xml';
+
+if(!file_exists($XML_DIRECTORY)) {
+	die("Path does not exists.");
+}
+
+// Language (pt | es | en)
+$LANGUAGE = "pt";
 
 require_once(dirname(__FILE__) . '/functions.php');
 
-ini_set('default_charset', 'utf-8');
-
-// XML DIRECTORY that contains items
-$XML_DIRECTORY = dirname(__FILE__) . '/xml/pt';
-
 $items = array();
-foreach(glob($XML_DIRECTORY . "/??.xml") as $file) {
+foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 	$doc = new DOMDocument();
 	$doc->load($file);
 
@@ -45,10 +65,10 @@ foreach(glob($XML_DIRECTORY . "/??.xml") as $file) {
 			if($item->hasChildNodes()) {
 
 				foreach($item->getElementsByTagName('description') as $node) {
-					
+					 
 					$tmp[$node->tagName] = $node->nodeValue;	
 				}
-			}
+			} 
 
 			if(isset($tmp['id']) && isset($items[$typename]['attr']['id'])) {
 
@@ -214,7 +234,5 @@ if(!isset($_REQUEST['debug'])) {
 	print $dom->saveXML();
 	
 }
-
-
 
 ?>
