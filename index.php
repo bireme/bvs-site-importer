@@ -15,8 +15,13 @@
  * - http://github.com/bireme/wp-multi-language-framework
  */
 
+ini_set('default_charset', 'utf-8');
+
 // XML DIRECTORY that contains items
 $XML_DIRECTORY = '/home/moa/project/bireme/vhost/bvsms/bases/site/xml';
+
+// old's URL (with http:// and not last /)
+$URL_OLD = 'http://bvsms.saude.gov.br';
 
 if(!file_exists($XML_DIRECTORY)) {
 	die("Path does not exists.");
@@ -26,6 +31,43 @@ if(!file_exists($XML_DIRECTORY)) {
 $LANGUAGE = "pt";
 
 require_once(dirname(__FILE__) . '/functions.php');
+
+function get_html_value($node) {
+
+	$content = trim($node->nodeValue);
+	if($content == "") {
+		return "";
+	}
+
+	$html = new DOMDocument();
+	$html->appendChild($html->importNode($node, true));
+	return $html->saveHTML();	
+}
+
+function replace_urls($content) {
+	$content = str_replace("&amp;", '&', $content);
+
+	preg_match_all('/php\/level\.php\?lang=pt&component=[0-9]+&item=[0-9]+/', $content, $all_matches);
+
+	// changing the urls
+	foreach($all_matches as $matches) {
+		foreach($matches as $match) {
+			$orig = $match;
+			$match = str_replace("php/level.php?lang=pt&component=", "", $match);
+			$match = str_replace("&item", "", $match);
+
+			$match = explode("=", $match);
+			$id = $match[0] . 0 . $match[1];
+
+			$url = "?p=" . $id;
+			$content = str_replace($orig, $url, $content);
+		}
+	}
+
+	return $content;
+} 
+
+$total = 0;
 
 $items = array();
 foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
@@ -55,26 +97,34 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 			$id_tmp = $tmp['id'];
 
 			if($item->hasChildNodes()) {
-				$tmp['content'] = $item->firstChild->nodeValue;
+				$tmp['content'] = trim($item->firstChild->nodeValue);
 
 			}
 			
 			$tmp['parent_id'] = 0;			
-
-			
-			if($item->hasChildNodes()) {
-
-				foreach($item->getElementsByTagName('description') as $node) {
-					 
-					$tmp[$node->tagName] = $node->nodeValue;	
-				}
-			} 
 
 			if(isset($tmp['id']) && isset($items[$typename]['attr']['id'])) {
 
 				$tmp['id'] = $id_collection . 0 . $id_tmp;
 				//$tmp['id'] = $id_collection * 10 + $id_tmp;
 			}
+			
+			if($item->hasChildNodes()) {
+
+				foreach($item->getElementsByTagName('description') as $node) {		
+					$tmp[$node->tagName] = trim($node->nodeValue);
+				}
+
+				foreach($item->getElementsByTagName('portal') as $node) {					 
+					$content = str_replace('<portal>', '', get_html_value($node));
+					$content = str_replace('</portal>', '', $content);
+					$content = str_replace($URL_OLD, '', $content);
+					$content = replace_urls($content);
+					
+					$tmp[$node->tagName] = $content;
+				}
+			} 
+
 
 			// pega os filhos
 			$tmp['childs'] = get_child_ids($item);
@@ -131,7 +181,8 @@ foreach($items as $label => $item) {
 				switch($key) {
 					case 'content': $tmp['title'] = $value; break;
 					case 'available': $tmp['status'] = $value; break;
-					case 'description': $tmp['content'] = $value; break;
+					case 'description': $tmp['excerpt:encoded'] = $value; break;
+					case 'portal': $tmp['content'] = $value; break;
 					case 'href': $tmp['link'] = $value; break;
 					case 'parent_id': $tmp['wp:post_parent'] = $value; break;
 					case 'id': $tmp['wp:post_id'] = $value; break;
@@ -195,20 +246,41 @@ foreach(array('wp:author_login' => 'importer', 'wp:author_email' => 'importer@bv
 $channel->appendChild($author);
 
 // rss content
+$count = -1;
 foreach($parsed_items as $bvs_item) {
+
+	//$count++; if($count < 100) continue;
 	
 	$item = $dom->createElement('item');
 
 	foreach($bvs_item as $key => $value) {
 		
 		// itens que sao cDATA
-		if(in_array($key, array('content', 'link'))) {
+		if(in_array($key, array('content', 'link', 'description'))) {
 			
-			$cdata = $dom->createCDATASection(trim($value));
-			$field = $dom->createElement("$key");
-			$field->appendChild($cdata);
+			if($key == "link") {
+
+				$field = $dom->createElement("wp:postmeta");
+				$subfield = $dom->createElement("wp:meta_key", "_links_to");
+				$field->appendChild($subfield);
+				
+				$subfield = $dom->createElement("wp:meta_value");
+				$cdata = $dom->createCDATASection(replace_urls(trim($value)));
+				// $cdata = $dom->createCDATASection(trim($value));
+				$subfield->appendChild($cdata);
+				
+				$field->appendChild($subfield);
+
+				// <wp:postmeta><wp:meta_key>_links_to</wp:meta_key><wp:meta_value>http://www.opas.org.br/mostrant.cfm?codigodest=343</wp:meta_value></wp:postmeta>
+			} else {
+
+				$field = $dom->createElement("$key");
+				$cdata = $dom->createCDATASection(trim($value));
+				$field->appendChild($cdata);
+			}
 
 		} else {
+
 			
 			$field = $dom->createElement("$key", "$value");
 
@@ -223,6 +295,8 @@ foreach($parsed_items as $bvs_item) {
 	}
 
 	$item = $channel->appendChild($item);
+
+
 }
 
 $root->appendChild($channel);
@@ -231,7 +305,10 @@ $dom->appendChild($root);
 if(!isset($_REQUEST['debug'])) {
 	
 	header("Content-Type: text/xml");
-	print $dom->saveXML();
+	$output = str_replace("<item/>", "", $dom->saveXML());
+	$output = str_replace("content>", "content:encoded>", $output);
+
+	print $output;
 	
 }
 
