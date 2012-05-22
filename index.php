@@ -84,19 +84,31 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 
 		foreach($structure as $item) {
 
+			$tmp = array();
+
 			// component id
 			$id_collection = $items[$typename]['attr']['id'];
 		
-			foreach($item->attributes as $attr) {	
+			foreach($item->attributes as $attr) {
 				$tmp[$attr->name] = $attr->value;
+				
+				if($attr->name == "available") {
+					if($attr->value == "no") {
+						$tmp[$attr->name] = 'trash';		
+					} else {
+						$tmp[$attr->name] = 'published';		
+					}
+				}
+
 			}
+
+			if(!isset($tmp['id'])) continue;
 			
 			// item id
 			$id_tmp = $tmp['id'];
 
 			if($item->hasChildNodes()) {
 				$tmp['content'] = trim($item->firstChild->nodeValue);
-
 			}
 			
 			$tmp['parent_id'] = 0;			
@@ -109,11 +121,13 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 			
 			if($item->hasChildNodes()) {
 
-				foreach($item->getElementsByTagName('description') as $node) {		
-					$tmp[$node->tagName] = trim($node->nodeValue);
-				}
+				// get the first description ONLY.
+				$node = $item->getElementsByTagName('description')->item(0);
+				$tmp[$node->tagName] = trim($node->nodeValue);
+				
+				if($item->getElementsByTagName('portal')->item(0)) {
 
-				foreach($item->getElementsByTagName('portal') as $node) {					 
+					$node = $item->getElementsByTagName('portal')->item(0);
 					$content = str_replace('<portal>', '', get_html_value($node));
 					$content = str_replace('</portal>', '', $content);
 					$content = str_replace($URL_OLD, '', $content);
@@ -122,7 +136,7 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 					$tmp[$node->tagName] = $content;
 				}
 
-				if($tmp['description'] != "" and $tmp['portal'] == "") 
+				if( (isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] == "") ) 
 					$tmp['portal'] = $tmp['description'];
 			} 
 
@@ -181,7 +195,7 @@ foreach($items as $label => $item) {
 				
 				switch($key) {
 					case 'content': $tmp['title'] = $value; break;
-					case 'available': $tmp['status'] = $value; break;
+					case 'available': $tmp['wp:status'] = $value; break;
 					case 'description': $tmp['excerpt:encoded'] = $value; break;
 					case 'portal': $tmp['content'] = $value; break;
 					case 'href': $tmp['link'] = $value; break;
