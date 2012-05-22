@@ -67,8 +67,6 @@ function replace_urls($content) {
 	return $content;
 } 
 
-$total = 0;
-
 $items = array();
 foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 	$doc = new DOMDocument();
@@ -123,6 +121,9 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 					
 					$tmp[$node->tagName] = $content;
 				}
+
+				if($tmp['description'] != "" and $tmp['portal'] == "") 
+					$tmp['portal'] = $tmp['description'];
 			} 
 
 
