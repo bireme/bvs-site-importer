@@ -96,7 +96,7 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 					if($attr->value == "no") {
 						$tmp[$attr->name] = 'trash';		
 					} else {
-						$tmp[$attr->name] = 'published';		
+						$tmp[$attr->name] = 'draft';		
 					}
 				}
 
