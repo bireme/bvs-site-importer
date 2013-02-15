@@ -15,22 +15,15 @@
  * - http://github.com/bireme/wp-multi-language-framework
  */
 
+require_once "config.php";
+require_once 'functions.php';
+
 ini_set('default_charset', 'utf-8');
-
-// XML DIRECTORY that contains items
-$XML_DIRECTORY = '/home/moa/project/bireme/vhost/bvsms/bases/site/xml';
-
-// old's URL (with http:// and not last /)
-$URL_OLD = 'http://bvsms.saude.gov.br';
 
 if(!file_exists($XML_DIRECTORY)) {
 	die("Path does not exists.");
 }
 
-// Language (pt | es | en)
-$LANGUAGE = "pt";
-
-require_once(dirname(__FILE__) . '/functions.php');
 
 function get_html_value($node) {
 
@@ -43,29 +36,6 @@ function get_html_value($node) {
 	$html->appendChild($html->importNode($node, true));
 	return $html->saveHTML();	
 }
-
-function replace_urls($content) {
-	$content = str_replace("&amp;", '&', $content);
-
-	preg_match_all('/php\/level\.php\?lang=pt&component=[0-9]+&item=[0-9]+/', $content, $all_matches);
-
-	// changing the urls
-	foreach($all_matches as $matches) {
-		foreach($matches as $match) {
-			$orig = $match;
-			$match = str_replace("php/level.php?lang=pt&component=", "", $match);
-			$match = str_replace("&item", "", $match);
-
-			$match = explode("=", $match);
-			$id = $match[0] . 0 . $match[1];
-
-			$url = "?p=" . $id;
-			$content = str_replace($orig, $url, $content);
-		}
-	}
-
-	return $content;
-} 
 
 $items = array();
 foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
@@ -150,13 +120,8 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 			}
 
 			$items[$typename][$tmp['id']] = $tmp;
-		} 
-		
-		
+		} 		
 	}
-
-
-	//break;
 }
 
 // agora itera pegando os filhos e colocando os aprents ids corretos
@@ -319,7 +284,12 @@ $dom->appendChild($root);
 
 if(!isset($_REQUEST['debug'])) {
 	
-	header("Content-Type: text/xml");
+	if(isset($_REQUEST['text'])) 
+		header("Content-Type: text/plain");
+	else 
+		header("Content-Type: text/xml");
+	
+
 	$output = str_replace("<item/>", "", $dom->saveXML());
 	$output = str_replace("content>", "content:encoded>", $output);
 
