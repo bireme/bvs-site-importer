@@ -28,4 +28,27 @@ function get_child_ids($dom, $tag_name = "item") {
 
 	return $response;
 }
+
+function replace_urls($content) {
+	$content = str_replace("&amp;", '&', $content);
+
+	preg_match_all('/php\/level\.php\?lang=pt&component=[0-9]+&item=[0-9]+/', $content, $all_matches);
+
+	// changing the urls
+	foreach($all_matches as $matches) {
+		foreach($matches as $match) {
+			$orig = $match;
+			$match = str_replace("php/level.php?lang=pt&component=", "", $match);
+			$match = str_replace("&item", "", $match);
+
+			$match = explode("=", $match);
+			$id = $match[0] . 0 . $match[1];
+
+			$url = "?p=" . $id;
+			$content = str_replace($orig, $url, $content);
+		}
+	}
+
+	return $content;
+} 
 ?>

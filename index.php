@@ -166,6 +166,7 @@ foreach($items as $label => $item) {
 					case 'href': $tmp['link'] = $value; break;
 					case 'parent_id': $tmp['wp:post_parent'] = $value; break;
 					case 'id': $tmp['wp:post_id'] = $value; break;
+					case 'img': $tmp['wp:img'] = $value; break;
 				}
 			}
 
