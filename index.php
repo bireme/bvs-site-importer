@@ -86,7 +86,6 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 			if(isset($tmp['id']) && isset($items[$typename]['attr']['id'])) {
 
 				$tmp['id'] = $id_collection . 0 . $id_tmp;
-				//$tmp['id'] = $id_collection * 10 + $id_tmp;
 			}
 			
 			if($item->hasChildNodes()) {
@@ -104,12 +103,18 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 					$content = replace_urls($content);
 					
 					$tmp[$node->tagName] = $content;
+
 				}
 
 				if( (isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] == "") ) 
 					$tmp['portal'] = $tmp['description'];
-			} 
 
+				elseif ((isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] != "") ) {
+					print $tmp['id'] . "\n";
+					$tmp['portal'] = $tmp['description'] . "<br><br><br>" . $tmp['description'];
+
+				}
+			} 
 
 			// pega os filhos
 			$tmp['childs'] = get_child_ids($item);
