@@ -1,5 +1,17 @@
 <?
 
+function get_html_value($node) {
+
+	$content = trim($node->nodeValue);
+	if($content == "") {
+		return "";
+	}
+
+	$html = new DOMDocument();
+	$html->appendChild($html->importNode($node, true));
+	return $html->saveHTML();	
+}
+
 // return the child ids of this Dom Element
 // @param $dom: DomElement
 // @param $tag_name: Name of tag which has childs

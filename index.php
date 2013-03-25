@@ -24,19 +24,6 @@ if(!file_exists($XML_DIRECTORY)) {
 	die("Path does not exists.");
 }
 
-
-function get_html_value($node) {
-
-	$content = trim($node->nodeValue);
-	if($content == "") {
-		return "";
-	}
-
-	$html = new DOMDocument();
-	$html->appendChild($html->importNode($node, true));
-	return $html->saveHTML();	
-}
-
 $items = array();
 foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 	$doc = new DOMDocument();
