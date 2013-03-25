@@ -26,6 +26,7 @@ if(!file_exists($XML_DIRECTORY)) {
 
 $items = array();
 foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
+
 	$doc = new DOMDocument();
 	$doc->load($file);
 
@@ -97,7 +98,6 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 					$tmp['portal'] = $tmp['description'];
 
 				elseif ((isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] != "") ) {
-					print $tmp['id'] . "\n";
 					$tmp['portal'] = $tmp['description'] . "<br><br><br>" . $tmp['description'];
 
 				}
