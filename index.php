@@ -71,16 +71,21 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 			
 			$tmp['parent_id'] = 0;			
 
+			// id = id do compomente + 0 + id do item
 			if(isset($tmp['id']) && isset($items[$typename]['attr']['id'])) {
-
 				$tmp['id'] = $id_collection . 0 . $id_tmp;
 			}
+
 			
 			if($item->hasChildNodes()) {
 
 				// get the first description ONLY.
 				$node = $item->getElementsByTagName('description')->item(0);
-				$tmp[$node->tagName] = trim($node->nodeValue);
+				if ($node) {
+					$tmp[$node->tagName] = trim($node->nodeValue);
+				}
+
+				
 				
 				if($item->getElementsByTagName('portal')->item(0)) {
 
@@ -91,11 +96,12 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 					$content = replace_urls($content);
 					
 					$tmp[$node->tagName] = $content;
-
 				}
 
-				if( (isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] == "") ) 
+				if( (isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] == "") ) {
+					
 					$tmp['portal'] = $tmp['description'];
+				}
 
 				elseif ((isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] != "") ) {
 					$tmp['portal'] = $tmp['description'] . "<br><br><br>" . $tmp['description'];
@@ -142,12 +148,14 @@ if(isset($_REQUEST['debug'])) {
 
 $parsed_items = array();
 foreach($items as $label => $item) {
+
 	
 	foreach($item as $itemnumber => $child) {
 		
 		$tmp = array();
 
-		if($label == 'collection' && $itemnumber != "attr") {
+
+		if($itemnumber != "attr") {
 			foreach($child as $key => $value) {
 				
 				switch($key) {
@@ -253,10 +261,7 @@ foreach($parsed_items as $bvs_item) {
 			}
 
 		} else {
-
-			
-			$field = $dom->createElement("$key", "$value");
-
+			@$field = $dom->createElement("$key", "$value");
 		}
 
 		$item->appendChild($field);
