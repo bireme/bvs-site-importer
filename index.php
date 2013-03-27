@@ -24,8 +24,45 @@ if(!file_exists($XML_DIRECTORY)) {
 	die("Path does not exists.");
 }
 
+// Getting collections id and names
+$base_xml = $bvs_xml = $XML_DIRECTORY . '/' . $LANGUAGE;
+$bvs_xml = $base_xml . "/bvs.xml";
+
+$doc = new DOMDocument();
+$doc->load($bvs_xml);
+
+$collectionList = $doc->getElementsByTagName("collectionList")->item(0);
+$collections = array();
+foreach($collectionList->getElementsByTagName('item') as $item) {
+	
+	$available = false;
+	$id = 0;
+	$value = $item->nodeValue;
+	$is_item = false;
+
+	foreach($item->attributes as $attr) {
+		if($attr->name == 'id') {
+			$id = $attr->value;
+		}
+		
+		if($attr->name == 'available' and $attr->value == 'yes') {
+			$available = true;
+		}
+
+		if($attr->name == 'file') {
+			$is_item = true;
+		}
+	}
+
+	if($available and $is_item) {
+		$collections[$id] = $value;
+	}
+}
+
 $items = array();
-foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
+foreach($collections as $collection_id => $collection_name) {
+
+	$file = $base_xml . "/" . $collection_id . ".xml";
 
 	$doc = new DOMDocument();
 	$doc->load($file);
@@ -75,7 +112,6 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 			if(isset($tmp['id']) && isset($items[$typename]['attr']['id'])) {
 				$tmp['id'] = $id_collection . 0 . $id_tmp;
 			}
-
 			
 			if($item->hasChildNodes()) {
 
@@ -84,8 +120,6 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 				if ($node) {
 					$tmp[$node->tagName] = trim($node->nodeValue);
 				}
-
-				
 				
 				if($item->getElementsByTagName('portal')->item(0)) {
 
@@ -99,7 +133,6 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 				}
 
 				if( (isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] == "") ) {
-					
 					$tmp['portal'] = $tmp['description'];
 				}
 
@@ -122,17 +155,13 @@ foreach(glob($XML_DIRECTORY . '/' . $LANGUAGE . "/??.xml") as $file) {
 	}
 }
 
-// agora itera pegando os filhos e colocando os aprents ids corretos
+// agora itera pegando os filhos e colocando os parents ids corretos
 foreach($items as $typename => $type) {
 	
-	foreach($type as $item_id => $item) {
-	
+	foreach($type as $item_id => $item) {	
 		if(isset($item['childs']) && count($item['childs']) > 0) {
-			
 			foreach($item['childs'] as $child) {
-				
 				if(isset($type[$child])) {
-
 					$items[$typename][$child]['parent_id'] = $item['id'];
 				}
 			}
@@ -140,20 +169,16 @@ foreach($items as $typename => $type) {
 	}
 }
 
-if(isset($_REQUEST['debug'])) {
-	
+if(isset($_REQUEST['debug'])) {	
 	print '<pre>';
 	print_r($items);die;
 }
 
 $parsed_items = array();
-foreach($items as $label => $item) {
-
-	
+foreach($items as $label => $item) {	
 	foreach($item as $itemnumber => $child) {
 		
 		$tmp = array();
-
 
 		if($itemnumber != "attr") {
 			foreach($child as $key => $value) {
@@ -169,11 +194,9 @@ foreach($items as $label => $item) {
 					case 'img': $tmp['wp:img'] = $value; break;
 				}
 			}
-
 		}
 		$parsed_items[] = $tmp;
 	}		
-	
 }
 
 $dom = new DOMDocument('1.0', 'UTF-8');
