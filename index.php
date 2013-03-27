@@ -53,16 +53,26 @@ foreach($collectionList->getElementsByTagName('item') as $item) {
 			$is_item = true;
 		}
 	}
-
-	if($available and $is_item) {
-		$collections[$id] = $value;
+	if($is_item) {
+		$collections[$id] = array(
+			'available' => $available,
+			'title' => $value,
+		);
 	}
 }
 
 $items = array();
-foreach($collections as $id_collection => $collection_name) {
+foreach($collections as $id_collection => $collection) {
 
 	$file = $base_xml . "/" . $id_collection . ".xml";
+
+
+	if(!file_exists($file)) {
+		continue;
+	}
+
+	$collection_name = $collection['title'];
+	$is_available = $collection['available'];
 
 	$doc = new DOMDocument();
 	$doc->load($file);
@@ -86,13 +96,18 @@ foreach($collections as $id_collection => $collection_name) {
 				$tmp[$attr->name] = $attr->value;
 				
 				if($attr->name == "available") {
-					if($attr->value == "no") {
+
+					// se o collection for desativo, desativamos todos os filhos
+					if(!$is_available) {
 						$tmp[$attr->name] = 'trash';		
 					} else {
-						$tmp[$attr->name] = 'draft';		
+						if($attr->value == "no") {
+							$tmp[$attr->name] = 'trash';		
+						} else {
+							$tmp[$attr->name] = 'draft';		
+						}
 					}
 				}
-
 			}
 
 			if(!isset($tmp['id'])) continue;
@@ -133,10 +148,8 @@ foreach($collections as $id_collection => $collection_name) {
 				if( (isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] == "") ) {
 					$tmp['portal'] = $tmp['description'];
 				}
-
 				elseif ((isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] != "") ) {
 					$tmp['portal'] = $tmp['description'] . "<br><br><br>" . $tmp['description'];
-
 				}
 			} 
 
@@ -207,9 +220,15 @@ foreach($items as $label => $item) {
 // criando posts para os collections
 foreach($collections as $id => $item) {	
 	$tmp = array();
-	$tmp['title'] = $item;
+	$tmp['title'] = $item['title'];
 	$tmp['wp:post_id'] = $id;
 	$tmp['wp:post_parent'] = 0;
+
+	if($item['available']) {
+		$tmp['wp:status'] = 'draft';
+	} else {
+		$tmp['wp:status'] = 'trash';
+	}
 		
 	$parsed_items[] = $tmp;
 }
