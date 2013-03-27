@@ -60,9 +60,9 @@ foreach($collectionList->getElementsByTagName('item') as $item) {
 }
 
 $items = array();
-foreach($collections as $collection_id => $collection_name) {
+foreach($collections as $id_collection => $collection_name) {
 
-	$file = $base_xml . "/" . $collection_id . ".xml";
+	$file = $base_xml . "/" . $id_collection . ".xml";
 
 	$doc = new DOMDocument();
 	$doc->load($file);
@@ -80,10 +80,8 @@ foreach($collections as $collection_id => $collection_name) {
 		foreach($structure as $item) {
 
 			$tmp = array();
+			$tmp['collection'] = $id_collection;
 
-			// component id
-			$id_collection = $items[$typename]['attr']['id'];
-		
 			foreach($item->attributes as $attr) {
 				$tmp[$attr->name] = $attr->value;
 				
@@ -195,8 +193,25 @@ foreach($items as $label => $item) {
 				}
 			}
 		}
+
+		// colocando os collections como pai dos itens que possuem parent = 0
+		if(array_key_exists('wp:post_parent', $tmp)) {
+			if($tmp['wp:post_parent'] == '0') {
+				$tmp['wp:post_parent'] = $child['collection'];
+			}
+		}
 		$parsed_items[] = $tmp;
 	}		
+}
+
+// criando posts para os collections
+foreach($collections as $id => $item) {	
+	$tmp = array();
+	$tmp['title'] = $item;
+	$tmp['wp:post_id'] = $id;
+	$tmp['wp:post_parent'] = 0;
+		
+	$parsed_items[] = $tmp;
 }
 
 $dom = new DOMDocument('1.0', 'UTF-8');
@@ -253,8 +268,6 @@ $channel->appendChild($author);
 $count = -1;
 foreach($parsed_items as $bvs_item) {
 
-	//$count++; if($count < 100) continue;
-	
 	$item = $dom->createElement('item');
 
 	foreach($bvs_item as $key => $value) {
