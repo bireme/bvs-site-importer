@@ -149,7 +149,7 @@ foreach($collections as $id_collection => $collection) {
 					$tmp['portal'] = $tmp['description'];
 				}
 				elseif ((isset($tmp['description']) and $tmp['description'] != "") and (isset($tmp['portal']) and $tmp['portal'] != "") ) {
-					$tmp['portal'] = $tmp['description'] . "<br><br><br>" . $tmp['description'];
+					$tmp['portal'] = $tmp['description'] . "<br><br><br>" . $tmp['portal'];
 				}
 			} 
 
