@@ -33,6 +33,8 @@ $doc->load($bvs_xml);
 
 $collectionList = $doc->getElementsByTagName("collectionList")->item(0);
 $collections = array();
+
+// iterando em todos os elementos "item" e salvando todos os files dessa BVS
 foreach($collectionList->getElementsByTagName('item') as $item) {
 	
 	$available = false;
@@ -61,19 +63,23 @@ foreach($collectionList->getElementsByTagName('item') as $item) {
 	}
 }
 
+// aqui começa a iteração pelos arquivos
 $items = array();
 foreach($collections as $id_collection => $collection) {
 
 	$file = $base_xml . "/" . $id_collection . ".xml";
 
-
+	// se não existir o arquivo, ele pula pra próxima iteração
 	if(!file_exists($file)) {
 		continue;
 	}
 
+	// pega o tipo de coleção
 	$collection_name = $collection['title'];
+	// verifica se o item está disponível
 	$is_available = $collection['available'];
 
+	// carrega o arquivo
 	$doc = new DOMDocument();
 	$doc->load($file);
 
@@ -110,6 +116,7 @@ foreach($collections as $id_collection => $collection) {
 				}
 			}
 
+			// se não tiver ID, cancela e toca pro próximo
 			if(!isset($tmp['id'])) continue;
 			
 			// item id
