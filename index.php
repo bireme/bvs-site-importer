@@ -24,6 +24,8 @@ if(!file_exists($XML_DIRECTORY)) {
 	die("Path does not exists.");
 }
 
+$dict_of_titles = array();
+
 // Getting collections id and names
 $base_xml = $bvs_xml = $XML_DIRECTORY . '/' . $LANGUAGE;
 $bvs_xml = $base_xml . "/bvs.xml";
@@ -195,7 +197,7 @@ if(isset($_REQUEST['debug'])) {
 $parsed_items = array();
 foreach($items as $label => $item) {	
 	foreach($item as $itemnumber => $child) {
-		
+
 		$tmp = array();
 
 		if($itemnumber != "attr") {
@@ -220,6 +222,16 @@ foreach($items as $label => $item) {
 				$tmp['wp:post_parent'] = $child['collection'];
 			}
 		}
+
+		// caso haja titles iguais, colocamos um * no fim do title, para o wp não sobrepor
+		if(in_array("title", array_keys($tmp))) {
+			if(in_array($tmp['title'], $dict_of_titles))
+				$tmp['title'] = $tmp['title'] . "*";
+			
+			$dict_of_titles[] = $tmp['title'];
+		}
+		
+		
 		$parsed_items[] = $tmp;
 	}		
 }
