@@ -225,9 +225,12 @@ foreach($items as $label => $item) {
 
 		// caso haja titles iguais, colocamos um * no fim do title, para o wp não sobrepor
 		if(in_array("title", array_keys($tmp))) {
-			if(in_array($tmp['title'], $dict_of_titles))
-				$tmp['title'] = $tmp['title'] . "*";
-			
+			if(in_array($tmp['title'], $dict_of_titles)){
+				if(!empty($tmp['title']))
+					$tmp['title'] = $tmp['title'] . " - ID " . $tmp['wp:post_id'];
+				else
+					$tmp['title'] = "No Title - ID " . $tmp['wp:post_id'];
+			}
 			$dict_of_titles[] = $tmp['title'];
 		}
 		
