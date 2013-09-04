@@ -223,7 +223,7 @@ foreach($items as $label => $item) {
 			}
 		}
 
-		// caso haja titles iguais, colocamos um * no fim do title, para o wp não sobrepor
+		// caso haja titles iguais, colocamos o ID no fim do title, para o WP não sobrepor
 		if(in_array("title", array_keys($tmp))) {
 			if(in_array($tmp['title'], $dict_of_titles)){
 				if(!empty($tmp['title']))
