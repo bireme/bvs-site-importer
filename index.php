@@ -24,6 +24,12 @@ if(!file_exists($XML_DIRECTORY)) {
 	die("Path does not exists.");
 }
 
+$msg = array(
+	"pt" => "Sem Título",
+	"en" => "No Title",
+	"es" => "Sin Título"
+);
+
 $dict_of_titles = array();
 
 // Getting collections id and names
@@ -229,7 +235,7 @@ foreach($items as $label => $item) {
 				if(!empty($tmp['title']))
 					$tmp['title'] = $tmp['title'] . " - ID " . $tmp['wp:post_id'];
 				else
-					$tmp['title'] = "No Title - ID " . $tmp['wp:post_id'];
+					$tmp['title'] = $msg[$LANGUAGE] . " - ID " . $tmp['wp:post_id'];
 			}
 			$dict_of_titles[] = $tmp['title'];
 		}
