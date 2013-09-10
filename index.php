@@ -231,7 +231,7 @@ foreach($items as $label => $item) {
 
 		// caso haja titles iguais, colocamos o ID no fim do title, para o WP não sobrepor
 		if(in_array("title", array_keys($tmp))) {
-			if(in_array($tmp['title'], $dict_of_titles)){
+			if(in_array(mb_strtolower($tmp['title']), array_map("mb_strtolower", $dict_of_titles))){
 				if(!empty($tmp['title']))
 					$tmp['title'] = $tmp['title'] . " - ID " . $tmp['wp:post_id'];
 				else
